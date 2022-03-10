@@ -69,3 +69,10 @@ vector<int> v = {1, 2}; // 好——v 一开始就初始化很好
 2.5 静态和全局变量
 只有POD变量才能定义static
 POD(Plain Old Data)原生数组类型，比如int char float
+
+类
+
+3.1. 构造函数的职责
+构造函数不得使用虚函数
+
+3.2. 隐式类型转换
