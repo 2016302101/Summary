@@ -13,3 +13,6 @@
 2）使用connect函数尝试与服务器端相连接
 3）开始用服务器端发送和接收消息
 4）关闭该sockfd
+
+
+I/O复用中：select、poll、epoll的区别
