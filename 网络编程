@@ -14,7 +14,25 @@
 3）开始用服务器端发送和接收消息
 4）关闭该sockfd
 
+关于一些常见socket函数的介绍
+socket函数：int listenfd = socket(AF_INET, SOCK_STREAM, 0); 
+bind函数：
+    struct sockaddr_in serveraddr;
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
+    serveraddr.sin_port = htons(SERVER_PORT);
+    if (connect(clientfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) == -1)
+
+将文件描述符fd与具体的协议地址绑定上，即具体的IP地址 + port
+INADDR_ANY：本机所有IP地址，相当于0.0.0.0 本机回环地址：127.0.0.1
+服务器端的监听端口号一般是固定的，客户端的进程端口号一般是随机分配的，port是short型变量，0-65535 1024以下的是保留端口，用户程序不使用
+1）当客户端使用bind将fd与o号端口绑定 没有影响
+2）固定客户端端口号 只能调用一次connect 下一次调用时由于该端口已经使用了，不能connect
+
 I/O复用中：select、poll、epoll的区别
+select用来检测一组socket中是否有事件就绪。读事件 写事件 异常事件
+
+
 
 线程池的原理和实现
 https://wangpengcheng.github.io/2019/05/17/cplusplus_theadpool/
