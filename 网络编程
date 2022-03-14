@@ -15,6 +15,8 @@
 4）关闭该sockfd
 
 关于一些常见socket函数的介绍
+https://juejin.cn/post/6931543528971436046
+
 socket函数：int listenfd = socket(AF_INET, SOCK_STREAM, 0); 
 bind函数：
     struct sockaddr_in serveraddr;
@@ -56,7 +58,21 @@ timeout：超时时间，可select处于三个状态
 3）>0就是正常的函数
 
 返回负值错误，0等待超时，正值某些文件可读可写或出错
+在是呀select函数时，其实就是将需要检测的fd全部遍历一遍，看是否有准备好的，在timeout中如果没有就会一直休眠，不是阻塞。
 select可以跨平台，但是单一线程能监视的文件描述符有限制，一般为1024。
+注意，select函数轮询fd时，是在内核空间进行这样的操作，所以每次轮询要将fd从用户空间拷贝到内核空间。
+
+select函数的过程：
+1）用户线程调用select，将fd从用户空间拷贝到内核空间
+2）内核在内核空间对fd遍历检查，如果没有就进入休眠，但是不阻塞，如果有就绪的fd或者时间到，就会返回函数
+3）用户拿到就绪fd数量后，对fd进行遍历，找出就绪的fd
+4）开始读写操作
+
+所有select有很多缺点
+1）有最大连接数，一般是1024，因为fd就是用位图法来查看有没有fd变化，最多1024位
+2）每次设置的时候需要设置maxfd
+3）检测fd是否变化时，要将fd从用户空间拷贝到内核空间
+4）就算检测到了变化，用户空间也要遍历一遍fd，才知道是哪个fd就绪了
 
 poll函数：int poll (struct pollfd *fds, unsigned int nfds, int timeout);
 struct pollfd {
@@ -64,7 +80,50 @@ struct pollfd {
     short events; /* 关心的事件组合 */
     short revents; /* 检测后得到的事件类型 */
 };
+nfds是待检测的fd的数量，events是用户设置的事件的种类，revents是poll函数返回时内核设置的，表示该fd发生了什么
+基本流程与select一样，只不过
+1）用户线程调用poll系统调用，将文件描述符链表拷贝到内核空间
+2）内核对fd遍历一遍，如果没有就绪的就休眠，直达有就绪的fd到达或者timeout到
+3）返回用户线程就绪的fd数量
+4）用户线程遍历一次文件fd，找出就绪的文件描述符以及具体发生了什么事件
+5）用户线程进行操作
 
+有如下优点：
+1）不用设置maxfd
+2）没有最大连接的限制，因为是链式存储结构，没有数组的长度限制
+
+epoll：
+// 数据结构
+// 每一个epoll对象都有一个独立的eventpoll结构体
+// 红黑树用于存放通过epoll_ctl方法向epoll对象中添加进来的事件
+// epoll_wait检查是否有事件发生时，只需要检查eventpoll对象中的rdlist双链表中是否有epitem元素即可
+struct eventpoll {
+    /*红黑树的根节点，这颗树存储着所有添加到epoll中的需要监控的事件*/
+    struct rb_root  rbr;
+    /*双链表存储所有就绪的文件描述符*/
+    struct list_head rdlist;
+};
+// API
+int epoll_create(int size); // 内核中间加一个 eventpoll 对象，把所有需要监听的 socket 都放到 eventpoll 对象中
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event); // epoll_ctl 负责把 socket 增加、删除到内核红黑树
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);// epoll_wait 检测双链表中是否有就绪的文件描述符，如果有，则返回
+
+epoll_create创建一个eventpoll对象，每一个epoll对象都有一个独立的eventpoll结构体，用红黑树存储需要检测的事件，用双链表存储就绪的fd
+epoll_ctl添加，修改，删除fd到创建好的eventpoll结构体
+epoll_wait调用，检测链表中是否有数据，有的话返回具体的就绪文件符的数量
+
+缺点：只能在Linux上工作
+优点：
+1）不需要频繁的从用户空间到内存空间拷贝fd集合，使用了内存映射mmap技术
+2）有就绪事件时，系统注册的回调函数就会被调用，把就绪的fd放入就绪链表中
+3）时间复杂度是常数，当有事件就绪时，epoll_wait只需要检测就绪链表中是否有数据，有就返回。
+
+select、poll、epoll的区别
+底层数据结构：数组存储文件描述符   链表存储文件描述符    红黑树存储监控的文件描述符，双向链表存储就绪的文件描述符
+如何获取就绪的fd 遍历fd           遍历链表             回调
+时间复杂度       n               n                    1
+FD数据拷贝       select和poll每次都要从用户内存拷贝到内核空间   epoll使用内存映射
+最大连接数       有限制          无限制                无限制
 
 线程池的原理和实现
 https://wangpengcheng.github.io/2019/05/17/cplusplus_theadpool/
