@@ -86,7 +86,7 @@ https://www.runoob.com/cplusplus/cpp-inheritance.html
 public继承：public -> public, protected -> protected;
 protected继承：public -> protected, protected -> protected;
 private继承：public -> private, protected -> private;
-不能访问基类的private，继承只能提高权限，不能降低权限。
+派生类不能访问基类的private，继承只能提高权限，不能降低权限。
 
 3）多态：多种形态，当类之间存在层次关系，即继承关系时，就会用到多态。可以在基类和派生类中同一个名称的函数但是又不同
 的实现。在基类中使用virtual修饰的函数是虚函数，在派生类中可以对其重新实现（重写）。当用基类指针指向派生类时，编译器使用动态
@@ -269,4 +269,8 @@ STL由算法 容器 迭代器组成。细分的话有6部分
 来维护内存池，空闲的内存块互相连接在一块，内存块一旦被使用，从链表中剔除。
 https://blog.csdn.net/weixin_39640298/article/details/88766223
 
-21 map与unordered_map对比 set与unordered_set对比
+is a 和 has a的区别
+is a是一种包含关系，比如水果类中有水果重量和价格的函数，苹果是一种水果，它可以继承水果类的重量和价格函数。但是有一个午餐类，午餐包含水果，但是午餐不只是
+水果，这就是has a的关系。
+实现has a有两种简单方法：
+1）然一个类是另一个类的成员； 2）使用私有继承，父类的所有对象和函数都变成了private，新类的对象无法使用父类的接口。
