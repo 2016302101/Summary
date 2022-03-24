@@ -46,7 +46,23 @@ having是过滤声明，可以使用聚合函数
 单列索引：只包含单个列； 组合索引：在表的多个字段组合上创建索引
 全文索引：索引类型是FULLTEXT，支持值的全文查找
 
+事务transaction：一组sql语句块，要不一起执行，如果有一个出错，就全部不执行。MYSQL中存储引擎实现事务。不是所有存储引擎都支持事务，InnoDB支持事务，MyIsam、Memory不支持。
+https://www.cnblogs.com/kismetv/p/10331633.html
+start transaction;
+……  #一条或多条sql语句
+commit;
 
+start transaction标示事务开始，commit提交事务，将执行结果写入数据库。如果sql语句出问题，会直接调用rollback回到执行前。
+MySQL默认的是autocommit，每一行命令都是一个事务，执行完就自动提交。事务下，关闭自动提交，遇到commit和rollback才开始另一个事务。
+但是特殊操作除外，DDL语句(create table/drop table/alter/table)、lock tables语句会强制执行commit
+
+事务的四大特性（ACID）
+1）原子性Atomicity：一个事务是一个不可分割的工作单位，必须一气呵成执行完。
+主要靠undo log日志实现，把命令一个个倒退
+2）持久性Durability：事务一旦提交，它对数据库的改变就应该是永久性的。接下来的其他操作或故障不应该对其有任何影响。事务不会因为宕机等原因丢失数据
+基于redo log，数据被修改时会记录到redo log中，宕机重启可以读取redo log中的数据，对数据库进行恢复。
+3）隔离性Isolation：事务内部的操作与其他事务是隔离的，并发执行的各个事务之间不能互相干扰
+4）一致性Consistency：事务执行结束后，数据库的完整性约束没有被破坏，事务执行的前后都是合法的数据状态。
 
 
 
